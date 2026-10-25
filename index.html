@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Royal Chess • Grandmaster Arena (शतरंज)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="brand">
+            <span class="brand-icon">♟️</span>
+            <span>Royal Chess <small style="font-size: 0.8rem; color: #81b64c; font-weight: normal;">• शतरंज Arena</small></span>
+        </div>
+        <div class="nav-controls">
+            <button id="btn-theme" class="btn btn-secondary btn-icon" title="Change Board Theme">🎨</button>
+            <button id="btn-sound" class="btn btn-secondary btn-icon" title="Toggle Sound">🔊</button>
+            <button id="btn-new-game" class="btn btn-primary">➕ New Game</button>
+        </div>
+    </header>
+
+    <!-- Main Game Wrapper -->
+    <main class="main-wrapper">
+        <!-- Chess Arena (Board + Clocks) -->
+        <section class="arena-container">
+            <!-- Opponent Bar -->
+            <div id="player-bar-black" class="player-bar">
+                <div class="player-info">
+                    <div id="opponent-avatar" class="player-avatar">🧠</div>
+                    <div class="player-details">
+                        <div class="player-name">
+                            <span id="opponent-name">Medium Bot</span>
+                            <span id="opponent-rating" class="player-rating">1400</span>
+                        </div>
+                        <div class="captured-pieces">
+                            <div id="black-captured"></div>
+                            <span id="black-material" class="material-diff"></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="black-clock" class="clock">10:00</div>
+            </div>
+
+            <!-- Board Row (Evaluation Bar + Board) -->
+            <div class="board-row">
+                <!-- Evaluation Bar -->
+                <div class="eval-bar-container" title="Evaluation Score">
+                    <div class="eval-score-text black-val" id="eval-black-val"></div>
+                    <div class="eval-bar-fill" id="eval-bar-fill"></div>
+                    <div class="eval-score-text white-val" id="eval-white-val">+0.0</div>
+                </div>
+
+                <!-- 8x8 Chessboard Grid -->
+                <div id="chessboard" class="chessboard"></div>
+            </div>
+
+            <!-- Player Bar -->
+            <div id="player-bar-white" class="player-bar active-turn">
+                <div class="player-info">
+                    <div class="player-avatar">👤</div>
+                    <div class="player-details">
+                        <div class="player-name">
+                            <span>You</span>
+                            <span class="player-rating">Player</span>
+                        </div>
+                        <div class="captured-pieces">
+                            <div id="white-captured"></div>
+                            <span id="white-material" class="material-diff"></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="white-clock" class="clock">10:00</div>
+            </div>
+        </section>
+
+        <!-- Right Control & Information Panel -->
+        <aside class="panel-container">
+            <!-- Game Status and Opening Header -->
+            <div class="panel-header">
+                <div class="game-status-badge">
+                    <div id="status-indicator" class="status-indicator"></div>
+                    <span id="status-text">White to move</span>
+                </div>
+                <div id="opening-name" class="opening-name">Starting Position</div>
+            </div>
+
+            <!-- Review Notice Banner (Click to jump to live) -->
+            <div id="review-banner" class="review-banner">
+                Viewing Historical Move • Click to Return to Live Game
+            </div>
+
+            <!-- Move History Notation Table -->
+            <div class="history-container">
+                <table class="moves-table">
+                    <tbody id="moves-table-body">
+                        <!-- Moves dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="panel-actions">
+                <button id="btn-hint" class="btn btn-secondary" title="Get Best Move Hint">💡 Hint</button>
+                <button id="btn-undo" class="btn btn-secondary" title="Undo Move">↶ Undo</button>
+                <button id="btn-flip" class="btn btn-secondary" title="Flip Board">🔄 Flip</button>
+                <button id="btn-draw" class="btn btn-secondary" title="Offer Draw">🤝 Draw</button>
+            </div>
+
+            <div class="panel-footer-actions">
+                <button id="btn-resign" class="btn btn-secondary" style="color: #ff6b6b; border-color: #5a2828;">🏳️ Resign</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Pawn Promotion Modal -->
+    <div id="promo-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 class="modal-title">Promote Pawn</h2>
+            <p class="modal-subtitle">Choose which piece you want to promote to:</p>
+            <div id="promo-choices" class="promotion-choices">
+                <!-- Dynamically populated promo buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameover-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 3rem; margin-bottom: 12px;">🏆</div>
+            <h2 id="gameover-title" class="modal-title">White Won!</h2>
+            <p id="gameover-reason" class="modal-subtitle">Checkmate</p>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+                <button id="btn-review-game" class="btn btn-secondary">Review Game</button>
+                <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Game Configuration Modal -->
+    <div id="newgame-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 class="modal-title">Start New Game</h2>
+            <p class="modal-subtitle">Customize your match preferences</p>
+
+            <!-- Mode -->
+            <div class="form-group">
+                <label class="form-label">Game Mode</label>
+                <div id="group-mode" class="pill-group">
+                    <button class="pill-btn active" data-val="ai">🤖 Vs Computer</button>
+                    <button class="pill-btn" data-val="pass">👥 Pass & Play (2P)</button>
+                </div>
+            </div>
+
+            <!-- Difficulty -->
+            <div class="form-group">
+                <label class="form-label">AI Difficulty</label>
+                <div id="group-difficulty" class="pill-group">
+                    <button class="pill-btn" data-val="1">🟢 Easy (~800)</button>
+                    <button class="pill-btn active" data-val="2">🟡 Medium (~1400)</button>
+                    <button class="pill-btn" data-val="3">🔴 Hard (~2000)</button>
+                </div>
+            </div>
+
+            <!-- Play As Side -->
+            <div class="form-group">
+                <label class="form-label">Play As</label>
+                <div id="group-side" class="pill-group">
+                    <button class="pill-btn active" data-val="w">⚪ White</button>
+                    <button class="pill-btn" data-val="random">🎲 Random</button>
+                    <button class="pill-btn" data-val="b">⚫ Black</button>
+                </div>
+            </div>
+
+            <!-- Clock Timer -->
+            <div class="form-group">
+                <label class="form-label">Clock Presets</label>
+                <div id="group-time" class="pill-group">
+                    <button class="pill-btn" data-val="120">⚡ 2 min</button>
+                    <button class="pill-btn" data-val="300">⏱️ 5 min</button>
+                    <button class="pill-btn active" data-val="600">🕒 10 min</button>
+                    <button class="pill-btn" data-val="0">♾️ Unlimited</button>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button id="btn-cancel-game" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                <button id="btn-start-game" class="btn btn-primary" style="flex: 1.5;">Start Match</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="chess.min.js"></script>
+    <script src="audio.js"></script>
+    <script src="engine.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
