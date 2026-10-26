@@ -50,6 +50,7 @@ class ChessGame {
         this.blackTime = 600;
         this.clockTimer = null;
         this.isGameOver = false;
+        this.lastTouchTime = 0;
 
         this.initEventListeners();
         this.startNewGame();
@@ -234,23 +235,11 @@ class ChessGame {
                     img.src = `pieces/${piece.color}${piece.type.toUpperCase()}.svg`;
                     img.alt = `${piece.color}${piece.type}`;
                     img.className = 'piece';
-                    img.draggable = true;
-
-                    // Drag & Drop
-                    img.addEventListener('dragstart', (e) => this.handleDragStart(e, squareName));
-                    img.addEventListener('dragend', () => img.classList.remove('dragging'));
-
-                    // Touch support
-                    this.attachTouchEvents(img, squareName);
-
                     squareEl.appendChild(img);
                 }
 
-                // Click to move & Drop target
-                squareEl.addEventListener('click', () => this.handleSquareClick(squareName));
-                squareEl.addEventListener('dragover', (e) => e.preventDefault());
-                squareEl.addEventListener('drop', (e) => this.handleDrop(e, squareName));
-
+                // Attach robust mobile & desktop events
+                this.attachSquareEvents(squareEl, squareName);
                 this.boardEl.appendChild(squareEl);
             }
         }
@@ -261,60 +250,91 @@ class ChessGame {
         this.blackBarEl.classList.toggle('active-turn', turn === 'b' && !this.isGameOver);
     }
 
-    // --- Touch Screen Drag and Drop ---
-    attachTouchEvents(pieceImg, squareName) {
-        let startX, startY;
-        let ghost = null;
+    // --- Unified Mobile & Desktop Event Handling ---
+    attachSquareEvents(squareEl, squareName) {
+        // Desktop Click (debounced so touch never triggers duplicate click)
+        squareEl.addEventListener('click', (e) => {
+            if (Date.now() - this.lastTouchTime < 450) {
+                return;
+            }
+            this.handleSquareClick(squareName);
+        });
 
-        pieceImg.addEventListener('touchstart', (e) => {
+        // Touch handling (Mobile Tap-to-move & Smooth Drag)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isDragging = false;
+        let ghost = null;
+        let touchPiece = null;
+
+        squareEl.addEventListener('touchstart', (e) => {
             if (this.viewingHistoryIndex !== -1 || this.isGameOver) return;
-            const pieceColor = this.chess.get(squareName)?.color;
-            if (pieceColor !== this.chess.turn()) return;
             if (this.gameMode === 'ai' && this.chess.turn() !== this.orientation) return;
 
             const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            isDragging = false;
+            touchPiece = this.chess.get(squareName);
+        }, { passive: true });
 
-            // Highlight source and valid moves
-            this.handleSquareClick(squareName);
-
-            // Create floating ghost
-            ghost = pieceImg.cloneNode(true);
-            ghost.style.position = 'fixed';
-            ghost.style.width = '60px';
-            ghost.style.height = '60px';
-            ghost.style.pointerEvents = 'none';
-            ghost.style.zIndex = '1000';
-            ghost.style.left = `${touch.clientX - 30}px`;
-            ghost.style.top = `${touch.clientY - 30}px`;
-            ghost.style.opacity = '0.9';
-            document.body.appendChild(ghost);
-        }, { passive: false });
-
-        pieceImg.addEventListener('touchmove', (e) => {
-            if (!ghost) return;
-            e.preventDefault();
+        squareEl.addEventListener('touchmove', (e) => {
+            if (!touchPiece || touchPiece.color !== this.chess.turn()) return;
             const touch = e.touches[0];
-            ghost.style.left = `${touch.clientX - 30}px`;
-            ghost.style.top = `${touch.clientY - 30}px`;
+            const dx = touch.clientX - touchStartX;
+            const dy = touch.clientY - touchStartY;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 14 && !isDragging) {
+                isDragging = true;
+                if (this.selectedSquare !== squareName) {
+                    this.selectedSquare = squareName;
+                    this.legalMovesForSelected = this.chess.moves({ square: squareName, verbose: true });
+                    this.renderBoard();
+                }
+
+                // Create floating piece ghost
+                ghost = document.createElement('img');
+                ghost.src = `pieces/${touchPiece.color}${touchPiece.type.toUpperCase()}.svg`;
+                ghost.className = 'touch-ghost';
+                ghost.style.left = `${touch.clientX - 28}px`;
+                ghost.style.top = `${touch.clientY - 28}px`;
+                ghost.style.width = '56px';
+                ghost.style.height = '56px';
+                document.body.appendChild(ghost);
+            }
+
+            if (isDragging && ghost) {
+                if (e.cancelable) e.preventDefault();
+                ghost.style.left = `${touch.clientX - 28}px`;
+                ghost.style.top = `${touch.clientY - 28}px`;
+            }
         }, { passive: false });
 
-        pieceImg.addEventListener('touchend', (e) => {
-            if (!ghost) return;
-            const touch = e.changedTouches[0];
-            ghost.remove();
-            ghost = null;
+        squareEl.addEventListener('touchend', (e) => {
+            this.lastTouchTime = Date.now();
 
-            // Find element under touch point
-            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-            const targetSquareEl = targetEl?.closest('.square');
-            if (targetSquareEl && targetSquareEl.dataset.square) {
-                const targetSquare = targetSquareEl.dataset.square;
-                if (targetSquare !== squareName) {
-                    this.executeMoveAttempt(squareName, targetSquare);
+            if (isDragging && ghost) {
+                const touch = e.changedTouches[0];
+                ghost.remove();
+                ghost = null;
+                isDragging = false;
+
+                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                const targetSquareEl = targetEl?.closest('.square');
+                if (targetSquareEl && targetSquareEl.dataset.square) {
+                    const targetSquare = targetSquareEl.dataset.square;
+                    if (targetSquare !== squareName) {
+                        this.executeMoveAttempt(squareName, targetSquare);
+                        if (e.cancelable) e.preventDefault();
+                        return;
+                    }
                 }
+            } else {
+                // User tapped square
+                this.handleSquareClick(squareName);
             }
+            if (e.cancelable) e.preventDefault();
         });
     }
 
@@ -957,4 +977,12 @@ class ChessGame {
 // Instantiate game on load
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new ChessGame();
+    // Unlock Web Audio API on first mobile user gesture
+    const unlockAudio = () => {
+        if (window.chessAudio) window.chessAudio.init();
+        document.removeEventListener('touchstart', unlockAudio);
+        document.removeEventListener('click', unlockAudio);
+    };
+    document.addEventListener('touchstart', unlockAudio, { passive: true });
+    document.addEventListener('click', unlockAudio, { passive: true });
 });
