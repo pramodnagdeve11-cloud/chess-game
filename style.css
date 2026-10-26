@@ -415,17 +415,25 @@ body {
     height: 100%;
     object-fit: contain;
     z-index: 10;
-    pointer-events: all;
+    pointer-events: none; /* Crucial for touch: touch registers cleanly on square */
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
     transition: transform 0.08s ease;
-    cursor: grab;
 }
 
 .piece.dragging {
-    opacity: 0.85;
-    cursor: grabbing;
-    transform: scale(1.15);
-    z-index: 100;
+    opacity: 0.3;
+}
+
+/* Floating touch ghost */
+.touch-ghost {
+    position: fixed;
     pointer-events: none;
+    z-index: 9999;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
+    transition: none;
+    transform: scale(1.15);
 }
 
 /* Right Control Panel */
@@ -698,32 +706,170 @@ body {
     color: #fff;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments for Tablets & Mobile Screens */
 @media (max-width: 1024px) {
     :root {
-        --board-size: min(84vw, 500px);
+        --board-size: min(88vw, 480px);
     }
     .main-wrapper {
         flex-direction: column;
         align-items: center;
+        padding: 12px 10px;
+        gap: 16px;
     }
     .panel-container {
         width: var(--board-size);
-        height: 380px;
+        height: auto;
+        min-height: 280px;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     :root {
-        --board-size: 92vw;
+        --board-size: min(95vw, calc(100dvh - 210px), 420px);
     }
-    .eval-bar-container {
-        display: none; /* Hide eval bar on tiny screens */
+    
+    body {
+        overflow-x: hidden;
     }
+    
     .navbar {
-        padding: 10px 14px;
+        padding: 8px 12px;
     }
-    .brand span {
+    .brand {
+        font-size: 1.05rem;
+        gap: 8px;
+    }
+    .brand-icon {
+        font-size: 1.4rem;
+    }
+    .nav-controls {
+        gap: 6px;
+    }
+    .nav-controls .btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    
+    .main-wrapper {
+        padding: 6px 4px;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .arena-container {
+        width: 100%;
+        gap: 6px;
+    }
+    
+    .player-bar {
+        width: var(--board-size);
+        padding: 6px 10px;
+        border-radius: 8px;
+    }
+    .player-info {
+        gap: 8px;
+    }
+    .player-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1.15rem;
+        border-radius: 6px;
+    }
+    .player-name {
+        font-size: 0.85rem;
+    }
+    .player-rating {
+        font-size: 0.68rem;
+        padding: 1px 4px;
+    }
+    .captured-pieces {
+        max-width: 130px;
+        overflow: hidden;
+        flex-wrap: wrap;
+        min-height: 16px;
+    }
+    .captured-pieces img {
+        width: 14px;
+        height: 14px;
+    }
+    .clock {
+        font-size: 1.1rem;
+        padding: 4px 8px;
+        border-radius: 5px;
+    }
+    
+    .eval-bar-container {
         display: none;
+    }
+    .board-row {
+        gap: 0;
+        justify-content: center;
+    }
+    
+    .chessboard {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+    
+    .panel-container {
+        width: var(--board-size);
+        height: auto;
+        border-radius: 10px;
+    }
+    .panel-header {
+        padding: 8px 12px;
+    }
+    .game-status-badge {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+    .opening-name {
+        font-size: 0.75rem;
+    }
+    .history-container {
+        max-height: 120px;
+        padding: 6px 10px;
+    }
+    .panel-actions {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .panel-actions .btn {
+        min-height: 42px;
+        font-size: 0.82rem;
+        padding: 6px 2px;
+    }
+    .panel-footer-actions {
+        padding: 6px 10px 10px 10px;
+    }
+    .panel-footer-actions .btn {
+        min-height: 38px;
+        font-size: 0.85rem;
+    }
+    
+    /* Modals on Mobile */
+    .modal-card {
+        padding: 20px 16px;
+        width: 92%;
+    }
+    .modal-title {
+        font-size: 1.25rem;
+    }
+    .promotion-choices {
+        gap: 10px;
+        margin: 14px 0;
+    }
+    .promo-btn {
+        width: 58px;
+        height: 58px;
+        padding: 6px;
+    }
+    .pill-group {
+        gap: 6px;
+    }
+    .pill-btn {
+        min-width: 55px;
+        padding: 6px 8px;
+        font-size: 0.78rem;
     }
 }
