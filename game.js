@@ -31,6 +31,7 @@ class ChessGame {
         // Configuration
         this.gameMode = 'ai'; // 'ai' or 'pass'
         this.aiLevel = 2; // 1: Easy, 2: Medium, 3: Hard
+        this.moveSpeed = 'medium'; // 'fast' (0.4s), 'medium' (1.1s natural), 'slow' (2.2s)
         this.playerSide = 'w'; // 'w', 'b', or 'random'
         this.orientation = 'w'; // 'w' or 'b'
         this.timePreset = 600; // 10 mins default (in seconds), 0 = unlimited
@@ -92,7 +93,9 @@ class ChessGame {
 
         // If playing AI as Black, trigger AI first move
         if (this.gameMode === 'ai' && this.orientation === 'b' && this.chess.turn() === 'w') {
-            setTimeout(() => this.triggerAiMove(), 400);
+            this.statusTextEl.textContent = "AI is thinking...";
+            this.statusIndicatorEl.classList.add('thinking');
+            setTimeout(() => this.triggerAiMove(), this.getAiDelay());
         }
     }
 
@@ -504,24 +507,33 @@ class ChessGame {
 
         // If playing vs AI and it's AI's turn
         if (this.gameMode === 'ai' && this.chess.turn() !== this.orientation) {
-            setTimeout(() => this.triggerAiMove(), 300);
+            this.statusTextEl.textContent = "AI is thinking...";
+            this.statusIndicatorEl.classList.add('thinking');
+            setTimeout(() => this.triggerAiMove(), this.getAiDelay());
         }
 
         return move;
     }
 
+    // --- AI Speed Delay Helper ---
+    getAiDelay() {
+        // Natural, comfortable speed delays
+        const delays = {
+            fast: 400,
+            medium: 1100, // Medium speed as requested: comfortable ~1 second thinking delay
+            slow: 2200
+        };
+        return delays[this.moveSpeed] || 1100;
+    }
+
     // --- AI Move Execution ---
     triggerAiMove() {
         if (this.isGameOver) return;
-        this.statusTextEl.textContent = "AI is thinking...";
-        
-        // Small delay so user sees smooth AI animation
-        setTimeout(() => {
-            const bestMove = window.chessEngine.findBestMove(this.chess, this.aiLevel);
-            if (bestMove) {
-                this.makeMove(bestMove);
-            }
-        }, 150);
+        this.statusIndicatorEl.classList.remove('thinking');
+        const bestMove = window.chessEngine.findBestMove(this.chess, this.aiLevel);
+        if (bestMove) {
+            this.makeMove(bestMove);
+        }
     }
 
     // --- Promotion Modal ---
@@ -935,17 +947,20 @@ class ChessGame {
         let chosenLevel = 2;
         let chosenSide = 'w';
         let chosenTime = 600;
+        let chosenSpeed = 'medium';
 
         setupPillGroup('group-mode', val => chosenMode = val);
         setupPillGroup('group-difficulty', val => chosenLevel = parseInt(val));
         setupPillGroup('group-side', val => chosenSide = val);
         setupPillGroup('group-time', val => chosenTime = parseInt(val));
+        setupPillGroup('group-speed', val => chosenSpeed = val);
 
         document.getElementById('btn-start-game').addEventListener('click', () => {
             this.gameMode = chosenMode;
             this.aiLevel = chosenLevel;
             this.playerSide = chosenSide;
             this.timePreset = chosenTime;
+            this.moveSpeed = chosenSpeed;
 
             // Update opponent name/rating in UI
             const oppNameEl = document.getElementById('opponent-name');
