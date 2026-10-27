@@ -1,0 +1,24 @@
+{
+  "name": "Royal Chess • Play Online by Pramod Nagdeve",
+  "short_name": "Royal Chess",
+  "description": "Play Royal Chess online for free by Pramod Nagdeve. Play against smart AI with medium speed, clocks, and realistic wooden sounds.",
+  "start_url": "/chess-game/",
+  "scope": "/chess-game/",
+  "display": "standalone",
+  "background_color": "#181715",
+  "theme_color": "#81b64c",
+  "icons": [
+    {
+      "src": "pieces/wK.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "pieces/wK.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
