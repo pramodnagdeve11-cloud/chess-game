@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap Index for Google Search Engine
+Sitemap: https://pramodnagdeve11-cloud.github.io/chess-game/sitemap.xml
