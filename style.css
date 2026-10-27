@@ -472,10 +472,21 @@ body {
     height: 10px;
     border-radius: 50%;
     background: #81b64c;
+    transition: all 0.2s ease;
 }
 .status-indicator.black-turn {
     background: #555;
     border: 1px solid #aaa;
+}
+.status-indicator.thinking {
+    background: #ffb74d !important;
+    box-shadow: 0 0 10px #ffb74d;
+    animation: pulseThinking 0.8s infinite alternate;
+}
+
+@keyframes pulseThinking {
+    from { opacity: 0.5; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1.25); }
 }
 
 .opening-name {
